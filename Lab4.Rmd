@@ -1,0 +1,263 @@
+---
+title: "Lab4ggplot"
+author: "Dulla"
+date: "2024-04-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tibble)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+consumptionNoOil<- read.csv('consumptionNoOil.csv', header = T, stringsAsFactors = T)
+projectTeam <- read.csv('projectTeam.csv', header = T, stringsAsFactors = T)
+importsExportsAmerica <- read.csv('importsExportsAmerica.csv', header = T, stringsAsFactors = T)
+provenOilReserveWEurope <- read.csv('provenOilReserveWEurope.csv', header = T, stringsAsFactors = T)
+channels<-read.csv('channels.csv', header = T, stringsAsFactors = T) 
+uni <- read.csv('universities.csv', header = T, stringsAsFactors = T) 
+```
+
+```{r}
+p <- ggplot(importsExportsAmerica, aes(crude.imports,crude.exports,
+label=country))
+p <- p+geom_text()
+p
+```
+
+```{r}
+p <- ggplot(importsExportsAmerica, aes(crude.imports,crude.exports,
+label=country))
+p <- p+geom_area()
+p
+```
+
+
+```{r}
+p <- ggplot(importsExportsAmerica, aes(crude.imports,crude.exports,
+label=country))
+p <- p+geom_polygon()
+p
+```
+
+```{r}
+p <- ggplot(importsExportsAmerica, aes(crude.imports,crude.exports,
+label=country, color=country))
+p <- p+geom_tile()
+p
+```
+
+```{r}
+p <- ggplot(projectTeam, aes(site, fill = experience))
+p <- p + geom_bar(position = "stack")
+p
+```
+
+```{r}
+p <- ggplot(projectTeam, aes(site, fill = experience))
+p <- p + geom_bar(position = "dodge")
+p
+```
+```{r}
+p <- ggplot(projectTeam, aes(site, fill = experience))
+p <- p + geom_bar(position = "fill")
+p
+```
+
+```{r}
+p <- ggplot(projectTeam, aes(site, fill = experience))
+p <- p + geom_bar(position = "identity")
+p
+```
+```{r}
+p <- ggplot(consumptionNoOil, aes(Year,MTOE, colour=Source))
+p <- p+geom_point()
+p
+```
+
+```{r}
+p <- ggplot(consumptionNoOil, aes(Year,MTOE, colour=Source))
+p <- p + xlim(2010,2035)
+p <- p+geom_point()
+p
+```
+```{r}
+p <- ggplot(consumptionNoOil, aes(Year,MTOE, colour=Source))
+p <- p+geom_point()
+p<- p+ labs(x="Year", y="Millions of tons of oil equivalent",title ="Energy consumption",subtitle = "Oil is excluded")
+p
+```
+
+```{r}
+p <- ggplot(consumptionNoOil, aes(Year,MTOE, colour=Source))
+p <- p+geom_point()
+p<- p+ labs(x="Year","Millions of tons of oil equivalent",
+title ="Energy consumption by source",
+subtitle = "Oil is excluded",
+colour = "Energy source")
+p
+```
+```{r}
+colours <-c(coal="black", gas="yellow2", renewables="green")
+p <- ggplot(consumptionNoOil, aes(Year, MTOE, colour=Source))
+p <- p +geom_point()
+p<-p+labs(x= "Year",y= "Millions of tons of oil equivalent",title = "Energy consumed",colour="Energy source")
+p<- p + scale_colour_manual(values=colours)
+p
+```
+```{r}
+p <- ggplot(consumptionNoOil, aes(Year,MTOE, colour=Source))
+p <- p+geom_point()
+p <- p + geom_vline(aes(xintercept = Year), linetype = "longdash",
+colour="green")
+p
+```
+
+```{r}
+p <- ggplot(consumptionNoOil, aes(Year,MTOE, colour=Source))
+p <- p+geom_point()
+p <- p + geom_vline(aes(xintercept = 2015), linetype = "longdash",
+colour="green")
+p
+```
+
+```{r}
+p <- ggplot(consumptionNoOil, aes(Year,MTOE))
+p <- p+geom_point()
+p <- p + geom_hline(aes(yintercept = 100), linetype = "dotdash",
+colour="green")
+p
+```
+```{r}
+p <- ggplot(consumptionNoOil, aes(Year,MTOE, colour=Source))
+p <- p+geom_point()
+p <- p + geom_hline(aes(yintercept = 100), linetype = "dotted",
+colour="darkgreen")
+p <- p + geom_vline(aes(xintercept = 2015), linetype = "twodash",
+colour="blue")
+p
+```
+# counting the number of staff per site.
+```{r}
+pieData <- projectTeam |> count(site, name="Number")
+names(pieData) <- c("site","numberStaff")
+```
+
+# order data according to the site (important for placing labels)
+```{r}
+pieData <- arrange(pieData,desc(site))
+```
+
+# create new column with position for label
+```{r}
+pieData <- pieData |>
+mutate(positionLabel = cumsum(numberStaff) - 0.5* numberStaff)
+```
+
+# creating plot
+```{r}
+p <- ggplot(pieData, aes(x="", y= numberStaff, fill = site))
+p <- p + geom_bar(width = 1, stat="identity")
+p <- p + coord_polar("y", start=0)
+```
+
+# adding text labels
+```{r}
+p <- p + geom_text(aes(y = positionLabel, label = numberStaff))
+```
+
+# Changing the colour scheme
+```{r}
+p <- p + scale_fill_manual(values = c("red","blue", "lightblue"))
+```
+
+# removing outer "ring"
+```{r}
+p <- p + theme_void()
+p
+```
+```{r}
+p <- ggplot(data=ProvenOilReservesZerosT, aes(MTBarrels, Denmark))
+p <- p + geom_point()
+p <- p + labs(title="Yearly proven oil vs Denmark", subtitle = "Denmark", x= "Year of Production", y="Number of Barrels ")
+p <- p + geom_hline(aes(yintercept= 0.75), linetype= "twodash")
+p
+```
+```{r}
+p <- ggplot(data = ProvenOilReservesZerosT, aes(MTBarrels, Italy))
+p <- p + geom_line(size=2, color= "orange")
+p <- p + labs(title="This the title", x= "This is the xaxis", y="This is the y axis")
+p
+```
+
+Using the channels dataset, plot length against area using a scatterplot. Use size to
+indicate “n” (the size of the stimuli).
+```{r}
+l <- ggplot(data = channels, aes(length, area, size = n))
+l <- l + geom_point()
+l <- l + 
+l
+              
+```
+
+Repeat the exercise above, but this time change the y axis to go from 0 to 5, so that it has the same scale as the x axis. Compare your plot with your previous plot, paying particular attention to which one is more effective to compare length against area. Ensure appropriate titles and labels.
+```{r}
+l <- ggplot(data = channels, aes(length, area, size = n))
+l <- l + geom_point()
+p <- p + labs(x="length", y="area" , title="Perception - length vs. area", size= "Size of stimuli")
+l <- l + ylim(0,5)
+l
+```
+```{r}
+p <- ggplot(uni, aes(status, fill = school))
+p <- p + geom_bar(position = "fill")
+p
+```
+```{r}
+uni2 <- uni |>filter(status %in% c('student', 'both'))
+```
+
+# Counting the number of rows per school
+```{r}
+pieData <- uni2 |> count(school, name="numberStudents")
+```
+
+#Ordering data according to the school name (important for placing labels later on)
+```{r}
+pieData <- arrange(pieData,desc(school))
+```
+
+# Creating a new column called positionLabel with position for label
+```{r}
+pieData <-  mutate(pieData, positionLabel = cumsum(pieData$numberStudents) - 0.5*pieData$numberStudents)
+```
+
+# creating pie chart
+```{r}
+p <- ggplot(pieData,  aes(x="", y= numberStudents, fill = school))
+p <- p + geom_bar(width = 1, stat="identity")
+p <- p + coord_polar("y", start=0)
+```
+
+# Adding text labels
+```{r}
+p <- p + geom_text(aes(y = positionLabel, label = numberStudents))
+```
+
+# Changing the colour scheme
+```{r}
+p <- p +   scale_fill_manual(values = c("wheat", "lightblue", "cornflowerblue", "blue1")) 
+```
+
+# removing outer "ring"
+```{r}
+p <- p + theme_void()
+p
+```
+

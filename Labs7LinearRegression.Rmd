@@ -1,0 +1,278 @@
+---
+title: "Lab7_LinearRegression"
+author: "Dulla"
+date: "2024-04-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list=ls())
+```
+
+```{r}
+drillData <- read.csv("DrillData.csv", header = T, stringsAsFactors = T)
+drillData <- as.data.frame(DrillData)
+drillData
+```
+Calculate the covariance (this gives the sample covariance) and correlation between the two variables.
+```{r}
+cov(drillData$Depth,drillData$DrillingTime)
+```
+
+Using the piping function
+```{r}
+drillData |> select(Depth, DrillingTime) |> cov()
+```
+
+Calculating the correlation coefficient
+```{r}
+cor(drillData$Depth,drillData$DrillingTime)
+cor(drillData[2],drillData[3])
+```
+
+Alternatively, using pipes
+```{r}
+drillData |> select(Depth, DrillingTime) |> cor()
+```
+
+
+Rank correlation coefficient
+```{r}
+cor(drillData$Depth,drillData$DrillingTime, method = "spearman")
+```
+
+Spearman's rank correlation coefficient using pip method
+```{r}
+drillData |> select(Depth, DrillingTime) |>
+cor(method="spearman")
+```
+
+```{r}
+p <- ggplot(drillData, aes(x= Depth, y = DrillingTime))
+p <- p + geom_point()
+p <- p + labs(title = "This is the title", x = "Depth (m)", y = "Drilling time (days)")
+p
+```
+
+###Linear Regression
+```{r}
+lm.output<-lm(formula=DrillingTime~Depth,data=drillData)
+lm.output
+```
+Calling the coefficients alone
+```{r}
+lm.output$coefficients
+```
+
+Getting the summary
+```{r}
+summary(lm.output)
+```
+
+To look at the residuals:
+```{r}
+lm.output$residuals
+```
+```{r}
+newdata <- data.frame(Depth=1700)
+predict(lm.output, newdata)
+```
+
+We need to construct the dataframe
+```{r}
+lmData <-data.frame(residuals = lm.output$residuals, Depth=drillData$Depth, DrillingTime= drillData$DrillingTime)
+lmData
+```
+
+To obtain the residuals against the DrillingTime
+```{r}
+p <- ggplot(lmData, aes(x=DrillingTime, y = residuals))
+p <- p + geom_point(size=2, colour="red")
+p <- p + theme_classic()
+p <- p + theme(text = element_text(size = 20))
+p
+```
+To obtain the residuals against the Depth
+```{r}
+p <- ggplot(lmData, aes(x=Depth, y = residuals))
+p <- p + geom_point(size=2, colour="red")
+p <- p + theme_classic()
+p <- p + theme(text = element_text(size = 20))
+p
+```
+
+
+To obtain the Q-Q plot (residuals against a theoretical normal distribution)
+```{r}
+p <- ggplot(lmData, aes(sample = residuals))
+p <- p + stat_qq(size=2) + stat_qq_line( alpha = 0.9, color = "red", linetype = "dashed")
+p <- p + theme_classic()
+p <- p + theme(text = element_text(size = 20))
+p
+```
+We can test whether the residuals distribution is normal using the Shapiro-Wilk test. A p-value > 0.05 would indicate that it is reasonable to assume that the distribution is normal.
+```{r}
+shapiro.test(lmData$residuals)
+```
+
+Adding an LR line to a Scatterplot
+```{r}
+p <- ggplot(drillData,aes(x=Depth,y=DrillingTime))
+p <- p + geom_point() + stat_smooth(method="lm")
+```
+
+We can remove the grey confidence band by setting se to F:
+```{r}
+p <- p + geom_point() + stat_smooth(method="lm",se=F)
+p
+```
+
+Exercises 1. Above you have built a linear regression model of drilling time on depth and predicted the drilling time for 1700 metres depth. Construct the linear regression model of depth on drilling time and estimate the depth that can be drilled in the time that you got from 1700 depth . Do you get 1700 metres?
+
+```{r}
+lm.output2<-lm(formula=Depth~DrillingTime,data=drillData)
+```
+
+```{r}
+newdata2 <- data.frame(DrillingTime=25.82071 )
+predict(lm.output2, newdata2)
+```
+
+Excercises 2. The loginTimes dataset contains data collected over 25 days. The data includes the number of users, average time to login (s), average time to access email (s), average time between mail messages received (s) and room temperature (degrees centigrade). Investigate relationships between pairs of variables. If you obtain a linear regression equation, comment on the p-value.
+
+```{r}
+loginTimes <- read.csv("loginTimes.csv", header = T, stringsAsFactors = T)
+loginTimes <- as.data.frame(loginTimes)
+loginTimes
+```
+checking covariants
+```{r}
+cov(loginTimes)
+```
+
+Checking correlation
+```{r}
+cor(loginTimes[1:6])
+```
+Looking for values close to 1 or -1 which are not in the diagonal. Users and timeToLogin seem to have a good correlation ( 0.794681253) . TimeBetweenMessages and timeToLogin are negatively correlated (-0.41082579), but not strongly.
+
+
+
+
+Checking the relationship between users and timeToLogin
+```{r}
+p <- ggplot(loginTimes, aes(x = users, y= timeToLogin))
+p <- p + geom_point()
+p <- p + labs(title = "`users vs timetologin", x = "Users", y = "Time to login (s)")
+p
+```
+###The points are roughly arranged around a line, but the relationship does not appear to be very strong. It can be seen that the association is positive (larger values in one variable are associated with  larger values in the other variable)
+
+
+
+Checking the relationship between users and timeToLogin
+```{r}
+p <- ggplot(loginTimes, aes(x = timeBetweenMessages , y= timeToLogin))
+p <- p + geom_point()
+p <- p + labs(title = "Time between messages vs timetologin", x = "Times between messages", y = "Time to login (s)")
+p
+```
+
+There is no clear relationship between the two variables.
+a. The plot does not show a linear correlation between  variables TimeBetweenMessages and timeToLogin.
+b. The prediction for time to login if time between messages is 200 should not be made using linear regression as the relation between variables is not linear.
+c. A linear model should not be used (see above). Also, 20 is not in the range for time between messages so this prediction should not be made even if a linear model were suitable.
+
+
+
+3. Anscombe’s quartet is available in R – just type ‘anscombe’ to see the data. Try applying linear regression to each of the four data sets (x1 pairs with y1, etc.). Does any of the information returned distinguish the sets?
+```{r}
+anscombe
+```
+
+```{r}
+p <- ggplot(anscombe, aes(x = x1, y = y1) )
+p <- p + geom_point() + stat_smooth(method="lm", formula = y ~ x) + labs(title="Set 1")
+p
+```
+
+```{r}
+p <- ggplot(anscombe, aes(x = x2, y = y2) )
+p <- p + geom_point() + stat_smooth(method="lm", formula = y ~ x) + labs(title="Set 2")
+p
+```
+
+```{r}
+p <- ggplot(anscombe, aes(x = x3, y = y3) )
+p <- p + geom_point() + stat_smooth(method="lm", formula = y ~ x) + labs(title="Set 3")
+p
+```
+
+
+```{r}
+p <- ggplot(anscombe, aes(x = x4, y = y4) )
+p <- p + geom_point() + stat_smooth(method="lm", formula = y ~ x) + labs(title="Set 4")
+p
+```
+
+
+
+
+4. Explore the Advertising.csv dataset. Are there any linear relationships between the various advertising methods and sales?
+```{r}
+advertising <- read.csv("Advertising.csv", header=T, stringsAsFactors = T)
+advertising
+```
+
+
+Check for correlation
+```{r}
+cor(advertising[1:5])
+```
+Sales and TV have a strong correlation (0.78222442). Sales and radio also have a correlation (0.57622257), but this is weaker.
+
+
+
+
+```{r}
+p <- ggplot(advertising, aes(x = sales, y = TV))
+p <- p + geom_point() + stat_smooth(method = "lm", formula = y ~ x) + labs(title = "Sales Vs TV")
+p
+```
+
+The relationship does not appear to be linear. The relation is positive but, as the TV expenditure increases, the spread of values for sales widens.
+
+
+
+
+```{r}
+p <- ggplot(advertising, aes(x = sales, y = radio))
+p <- p + geom_point() + stat_smooth(method = "lm", formula = y ~ x) + labs(title = "Sales Vs Radio Expenditure")
+p
+```
+No linear pattern can be seen
+
+
+5. Fourteen students were employed to test a new information retrieval tool which is intended to locate relevant passages in electronic books. The time (minutes) taken to perform an indexing task and the recall score (%) for each student is as follows
+
+```{r}
+Time <- c(9.2,13.3,8,11.9,12.1,8.9,10.8,7.2,14.9,7.3,6.3,10.4,13.8,7.6)
+Recall <- c(61,53,57,50,53,54,54,6,46,87,88,52,45,72)
+irTool <- data.frame(Time=Time, Recall=Recall)
+```
+
+Checking the correlation
+```{r}
+cor(irTool$Time, irTool$Recall, method="spearman")
+```
+```{r}
+p <- ggplot(irTool, aes(x=Time,y=Recall))
+p <- p + geom_point() + labs(title = "Time Vs Recall", x ="Time in seconds", y= "% of call")
+p
+```
+
+It can be seen that a higher time taken is generally associated with a lower recall score.  The relationship does not match a straight line. Use Spearman correlation coefficient to check strength of association.

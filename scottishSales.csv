@@ -1,0 +1,17 @@
+Concept,Category,City,Sales
+Sale,Materials,Aberdeen,150000
+Sale,Materials,Dundee,140000
+Sale,Materials,Glasgow,220000
+Sale,Materials,Edinburgh,200000
+Sale,Tools,Aberdeen,90000
+Sale,Tools,Dundee,75000
+Sale,Tools,Glasgow,130000
+Sale,Tools,Edinburgh,110000
+Sale,Spares,Aberdeen,110000
+Sale,Spares,Dundee,85000
+Sale,Spares,Glasgow,165000
+Sale,Spares,Edinburgh,140000
+Sale,Other,Aberdeen,50000
+Sale,Other,Dundee,39000
+Sale,Other,Glasgow,85000
+Sale,Other,Edinburgh,76000

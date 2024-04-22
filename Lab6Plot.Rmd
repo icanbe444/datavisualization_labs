@@ -1,0 +1,190 @@
+---
+title: "Lab6_Data_Analysis"
+author: "Dulla"
+date: "2024-04-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+ rm(list = ls())
+library(tidyverse)
+```
+
+
+
+```{r}
+Consumption <- read.csv("consumptionTransposed.csv", header = T, stringsAsFactors = T)
+```
+
+```{r}
+summary(Consumption)
+str(Consumption)
+class(Consumption)
+head(Consumption)
+tail(Consumption)
+```
+
+
+```{r}
+Consumption |>  select(Oil) |> summary()
+```
+
+```{r}
+Consumption |> pull(Gas)
+```
+
+```{r}
+Consumption |> pull(Gas) |> mean()
+```
+
+```{r}
+browserdata <- read.csv("browserdata.csv",header = T, stringsAsFactors = T)
+summary(browserdata)
+```
+One-way tables
+```{r}
+counts <- browserdata |> pull(Browser) |> table()
+counts
+```
+
+```{r}
+prop.table(counts)  #each row adds up to 1
+```
+
+Two-way tables
+```{r}
+freqBrowser <- xtabs(~ Browser+Membership, data=browserdata)
+freqBrowser
+```
+```{r}
+prop.table(freqBrowser,2) # each column adds up to 1
+```
+# convert data to dataframe first
+```{r}
+e <- as.data.frame(browserdata)
+e
+```
+
+For a simple bar plot
+```{r}
+p <- ggplot(e, aes(x=Membership,fill=Browser))
+p <- p + geom_bar(aes(y=Use), stat="identity")
+p <- p + labs(title = "Browser use by membership type",
+x = "Membership type", y = "Frequency count")
+p <- p + scale_fill_brewer(palette="Set1")
+p <- p + theme_classic()
+p
+```
+
+Similarly, the bar plot could show each browser data in a different column.
+
+```{r}
+p <- ggplot(e, aes(x=Membership, y=Use, fill=Browser) )
+p <- p + geom_bar(stat="identity", position=position_dodge())
+p <- p + labs(title = "Browser use by membership type", x =
+"membership type", y="Frequency count")
+p <- p + scale_fill_brewer(palette="Dark2")
+p <- p + theme_classic()
+p
+```
+Create a histogram of the daily time spent online as follows:
+```{r}
+p <- ggplot(browserdata, aes(x= MinsPerDay))
+p <- p + geom_histogram(aes(y=..density..), binwidth=20 )
+p
+```
+Adding colour, titles, labels, and a line
+```{r}
+p <- ggplot(browserdata, aes(x= MinsPerDay))
+p <- p + geom_histogram(aes(y=..density..),col="red", fill="red", binwidth=10)
+p <- p + labs(x="Average time spent online (mins/day)",y="Density")
+p <- p + geom_density(col="blue")
+p <- p + theme_classic()
+p
+```
+
+The following code produces a dot plot for column Use, which shows the distribution of values.
+```{r}
+p <- ggplot(browserdata, aes(x= Use))
+p <- p + geom_dotplot(binwidth=0.05)
+p
+```
+The following produces a nicer-looking dot plot.
+```{r}
+p <- ggplot(browserdata, aes(x= Use))
+p <- p + geom_dotplot(col="red", fill="red" , binwidth=0.05)
+p <- p + labs(x="Use level", y="")
+p <- p + theme_classic()
+p
+```
+
+##Box plots
+The following code produces a boxplot for the average daily time online.
+```{r}
+p <- ggplot(browserdata, aes(y= MinsPerDay))
+p <- p + geom_boxplot()
+p
+```
+
+
+Adding colour, titles, etc.
+```{r}
+p <- ggplot(browserdata, aes(y= MinsPerDay))
+p <- p + geom_boxplot(col="blue", fill="lightblue")
+p <- p + labs(title="User average minutes/day online",
+x="", y="")
+p <- p + theme_classic()
+p
+```
+
+```{r}
+p <- ggplot(browserdata, aes(x=Browser, y= MinsPerDay))
+p <- p + geom_boxplot(aes(col=factor(Browser)) )
+p <- p + labs(title="User average minutes/day online by browser",
+x="",y="Average minutes per day")
+p <- p + theme_classic()
+p
+```
+
+```{r}
+p <- ggplot(data.frame(x=c(-pi,pi)),aes(x=x))
+p <- p + stat_function(fun=cos)
+p
+```
+
+```{r}
+mysquare <- function(xval) {xval*xval}
+xlimits <- c(-pi,pi) ## pi = 3.14...
+xlimits
+```
+
+```{r}
+p <- ggplot(data.frame(xlimits),aes(x=xlimits))
+p <- p + stat_function(fun=cos) 
+p
+```
+Try replacing geom_histogram with geom_freqpoly and geom_density.
+```{r}
+normal.sampled <- rnorm(1000)
+p <- ggplot(NULL,aes(x=normal.sampled,y=..density..))
+p <- p + geom_histogram(binwidth = 0.1)
+p
+```
+
+```{r}
+normal.m1.s1 <- rnorm(1000,mean=1,sd=1)
+normal.m2.s3 <- rnorm(1000,mean=2,sd=3)
+norm.compare <- data.frame(normal.m1.s1,normal.m2.s3)
+bplot.data <- stack(norm.compare)
+p <- ggplot(bplot.data,aes(x=ind,y=values,fill=ind))
+p <- p + geom_boxplot()
+p
+```
+
+
+
+
