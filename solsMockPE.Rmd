@@ -1,0 +1,261 @@
+---
+title: "CMM020 MOCK Practical Examination"
+author: "IA"
+date: "To take place on 20 March 2024"
+output: html_document
+---
+
+```{r  setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Clearing the environment.
+
+```{r}
+rm(list=ls())
+```
+
+Loading  library (package)  tidyverse
+
+```{r warning = F, message = F}
+
+library(tidyverse)
+library(treemapify)
+library(igraph)
+library(ggraph)
+library(ggwordcloud)
+```
+
+Loading the data files.
+
+
+```{r}
+arrivals <- read.csv("arrivals.csv", header=T, stringsAsFactors=T)
+numbersPerDay <- read.csv("numbersPerDay.csv", header=T, stringsAsFactors=T)
+vessel <- read.csv("vessel.csv", header=T, stringsAsFactors=T)
+```
+
+
+# TASK 1
+Task 1 – Analyse the following attributes for both the vessel and the arrivals datasets:
+o Draft.
+o Flag.
+Use at most 4 plots in total to show the distribution of the above variables. Choose colours "tomato","skyblue1" "coral3" "forestgreen" if you can. Discuss the results. How do distributions compare between the 2 datasets?
+
+## Draft
+
+```{r}
+summary(vessel$Draft)
+IQR(vessel$Draft)
+sd(vessel$Draft)
+summary(arrivals$Draft)
+IQR(arrivals$Draft)
+sd(arrivals$Draft)
+```
+
+```{r}
+p <- ggplot(vessel, aes(Draft))
+p <- p+geom_histogram(colour="tomato", fill="tomato", bins=40 ,aes(y=after_stat(density)) )
+p <-  p+geom_density()
+p <- p+labs( title="Vessel draft distribution", x = "Ship draft (metres)", y = "Count")
+p
+p <- ggplot(arrivals, aes(Draft))
+p <- p+geom_histogram(colour="skyblue1", fill="skyblue1", bins=40,  aes(y=after_stat(density)))
+p <-  p+geom_density()
+p <- p+labs( title="Vessel draft distribution for arrivals", x = "Ship draft (metres)", y = "Count")
+p
+
+```
+
+Neither distribution is normal. It can be seen that most individual vessels have a draft of between 5 and 16 metres with a higher frequency between 7 and 12.There are very few vessels with a draft of more than 17, but there are drafts of up to 48 metres.
+
+When looking at arrivals, the most frequent drafts are lower (between 5 and 10 or 12, with a very large peak at around 7 metres). This will be due to the same (small) vessels coming into port more frequently than larger vessels.
+
+## Flag
+
+```{r}
+summary(vessel$Flag)
+summary(arrivals$Flag)
+```
+
+```{r}
+p <- ggplot(vessel, aes(Flag))
+p <- p+geom_bar(colour="coral3", fill="coral3")
+p <- p+labs( title="Vessel flag distribution", x = "Ship flag", y = "Count")
+p
+
+p <- ggplot(arrivals, aes(Flag))
+p <- p+geom_bar(colour="forestgreen", fill="forestgreen")
+p <- p+labs( title="Arrivals flag distribution", x = "Ship flag", y = "Count")
+p
+```
+
+
+A comment regarding the differences in flag distribution is expected, highlighting frequent flags in the vessel distribution when compared to the arrivals distribution. For example the arrival of a vessel with a Cyprus flag is very frequent when compared to other flags, but there are only a few vessels with that flag (with repeated arrivals).
+
+
+## TASK 2
+Task 2 – Produce a plot for each of the scenarios below and comment on the plots, suggesting improvements where appropriate.
+o A line plot of number of arrivals per day using one line per day of the week. Use the numbersPerDay dataset.
+o A scatterplot of Beam vs Draft according to Type. Use the vessel dataset.
+o A word cloud of shipping company. Use the arrivals dataset.
+o A dendrogram of country name, vessel name and length for vessels where the country flag is Turkey. You can get the dataset of vessels from Turkey with the following code (which leaves the resulting dataset in variable vessels2) vessel2 <- vessel |> filter(FlagCountry == "Turkey")
+### Arrivals per day
+
+```{r}
+p <- ggplot(numbersPerDay, aes(x=Day, y=ArrivalNumber, colour=DayName))
+p <- p+geom_point()
+p <- p+geom_line()
+p <- p+labs( title="Arrivals per day", x = "Day", y = "Number of arrivals", colour="Day of the week")
+p
+
+```
+
+The plot is cluttered and it is difficult to draw conclusions about days of the week. It is clear that there were higher numbers of arrivals for some days during the  first 50 days of the year.
+
+### Draft vs beam by type
+
+```{r}
+p <- ggplot(vessel, aes(Draft, colour = Type))
+p <- p+geom_point(aes(y = Beam))
+p <- p+labs( title="Ship draft vs ship beam", x = "Ship draft (metres)", y = "Ship beam (metres)")
+p
+```
+
+Comments are expected. For example, about the outlier, the smaller vessels and the wide range of sizes of ship beams for similar ship drafts. Container ships seem to vary greatly in draft and beam sizes. 
+
+### Word cloud of shipping companies
+
+```{r}
+
+set.seed(3)
+companies <- as.data.frame(table(arrivals$ShippingCompany))
+# Give the columns proper names
+names(companies) <- c("Company","count")
+p <- ggplot(companies, aes(label = Company, size=count)) 
+p <- p +  geom_text_wordcloud_area(colour="blue")
+p <- p +   scale_size_area(max_size = 40)
+p <- p +   labs(title= "Most common shipping companies for vessels arriving at  Barcelona")
+p
+```
+
+###  Dendrogram 
+
+Getting the tree from the root to the leaves
+
+```{r}
+
+vessel2 <- vessel |> filter(FlagCountry == "Turkey")
+link_top_2 <- vessel2 |>
+  select(FlagCountry, Name) |>
+  unique() |>
+  rename(from=FlagCountry, to=Name)
+
+link_2_3 <- vessel2 |>
+  select(Name, Length) |>
+  unique() |>
+  rename(from=Name, to=Length)
+link_2_3$to <- as.factor(link_2_3$to)
+
+# Getting all the links into one data frame
+links <- rbind(link_top_2, link_2_3)
+ 
+dendro2 <- graph_from_data_frame(links)
+```
+```{r}
+p <- ggraph(dendro2, layout = 'dendrogram',
+            circular = FALSE) 
+p <- p + geom_node_label(aes(label = name),  size=3,
+                  repel = TRUE, colour="darkgreen",fill="lightyellow",show.legend = TRUE)
+p <- p + geom_edge_diagonal(colour="darkgreen")
+p <- p + geom_node_point(colour="darkgreen")
+p <- p + labs(title="Length of vessels from Malta (in metres)")
+p
+```
+
+## TASK 3
+Task 3 – check whether a linear regression model is appropriate for predicting Beam (response) from Length (predictor) using the vessel dataset. Obtain the linear model and perform checks to further confirm or reject its suitability. Obtain a 2nd model for Beam (response) from Length and Draft (predictors). Comment on the new model.
+
+First check the correlation coefficient.
+
+```{r}
+cor(vessel$Beam,vessel$Length)
+```
+The correlation coefficient is relatively close to 1, suggesting a strong correlation.
+
+The data points are visualised.
+
+```{r}
+p <- ggplot(vessel, aes(x=Length, y = Beam))
+p <- p+geom_point()
+p <- p+ geom_smooth(method="lm", formula= "y~x")
+p <- p+labs( title="Ship length vs ship beam", x = "Ship length (metres)", y = "Ship beam (metres)")
+p
+```
+
+The points are aligned with the line to some extent but they are relatively apart from the line for some ship lengths above 150. For points below a length of 150, the line is mainly above. There are lots of lengths for a ship beam of around 32 (a horizontal line pattern).
+
+
+Obtaining the linear model.
+
+
+```{r}
+lm.output <- lm(formula = vessel$Beam ~ vessel$Length)
+summary(lm.output)
+```
+The model is Beam = 4.9331 + 0.1235 * Length.
+
+The distribution of residuals may be plotted to check whether it is close to normal.
+
+```{r}
+r <-  lm.output$residuals
+re <- data.frame(res=r)
+p <- ggplot(re, aes(res))
+#p <- p+geom_histogram(colour="wheat", fill="wheat", bins=40 , aes(y=..density..))
+p <-  p+geom_density()
+p <- p+labs( title="Residual distribution", x = "Residual", y = "Frequency")
+p
+
+```
+
+The plot shows that the distribution of residuals is not entirely normal.
+
+Q-Q plot
+
+```{r}
+lmData <- 
+data.frame(residuals = lm.output$residuals, 
+                Length= vessel$Length, 
+                Beam = vessel$Beam)
+
+p <- ggplot(lmData, aes(sample = residuals)) 
+p <- p + stat_qq(size=2) + 
+stat_qq_line( alpha = 0.9, color = "red", 
+linetype = "dashed")
+p <- p +  theme_classic() 
+p <- p + theme(text = element_text(size = 20))
+p
+
+
+```
+
+We can see that the residuals are not normally distributed in this case. Some points are far from the line.
+
+```{r}
+shapiro.test(lmData$residuals)
+```
+
+The p-value is smaller than 0.05, indicating that it is not reasonable to assume that the residuals are normally distributed.
+
+### Multiple linear regression
+
+```{r}
+lm.output2 <- lm(Beam ~Length+Draft, data = vessel)
+summary(lm.output2)
+```
+
+The equation is
+
+Beam = 2.090766 + 0.098004 * Length + 0.751396 * Draft
+
+The residual standard error has decreased and the adjusted R-squared has increased. The intercept and slopes are significant, suggesting this is a better model.
